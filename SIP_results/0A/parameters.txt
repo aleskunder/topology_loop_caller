@@ -1,0 +1,1 @@
+java -jar SIP_HiC.jar hic ../mcool_data/0A.dicty_withcontigs.mapq_30.100.mcool ../chr_sizes_dicty.tsv 0A /gss/home/a.kuznetsov/.local/bin/cooltools /gss/home/a.kuznetsov/.local/bin/cooler -g 1.5 -min 2.0 -max 2.0 -mat 2000 -d 3 -res 2000 -sat 0.01 -t 2800 -nbZero 6 -factor 1 -fdr 0.01 -del true -cpu 1 -isDroso false

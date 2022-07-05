@@ -1,2 +1,2 @@
 # topology_loop_caller
-Chromatin loop caller using TADs based on Hi-C data
+Chromatin persistent homology-based loop caller using TADs based on Hi-C data

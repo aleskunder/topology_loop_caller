@@ -1,6 +1,6 @@
 __title__ = "topology_loop_caller"
 __version__ = "1.0.0"
-__author__ = "Alexander Kuznetsov"
+__author__ = "Khrameeva Lab"
 __email__ = "alexander.kuznetsov.bioinf@gmail.com"
 __description__ = (
     "Persistent homology - based pipeline of feature generation and loop calling"

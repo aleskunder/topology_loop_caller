@@ -18,11 +18,13 @@ Chromatin displays highly sophisticated levels of structural organization, each 
 **Chromosome conformation capture (3C) techniques** allow us to study the three-dimensional structure as a whole. For instance **Hi-C**, being one of 3C methods, allows the acquisition of a genome-wide contact map.<br>
 <p align="center"><img src="images/contact_map.png" width="500"></p>
 <p align="center"> <b>Figure 2.</b> An example of an unbalanced contact frequency heatmap, a fragment of <i>D. melanogaster</i> Hi-C matrix.</p>
+
 The existing methods of Hi-C data analysis allow to identify the main chromatin structure components: compartments, chromosomal territories, topologically associating domains, and loops — but these methods either require huge computational resources and manual selection of the calling parameters, or make certain assumptions, limiting the possible search field.
 #### Topological Data Analysis (TDA)
 The challenges of non-universality and **large amounts of input data with stochastic noise** could be tackled by **Topological Data Analysis (TDA)**, the key advantageous of which are the robustness to the noise of the input data, relatively high processivity and intrinsic idea of the analysis of the shape of the data.<br>
 <p align="center"><img src="images/homologies.png" width="500"></p>
 <p align="center"> <b>Figure 3.</b> Persistent homologies rationale of the finite point cloud in the R2 plane.</p>
+
 The described project is aiming to apply one of the methods of topological analysis — persistent homology, to create a **chromatin loop – calling tool** based on Hi-C data. To solve this task, we are developing an algorithm for translating the contact matrix into a matrix of non-Euclidean distances, topological analysis of the resulted topological space, generation of topological features, filtration, machine learning (ML) model training, and loop visualization. To validate the developed tool, we are comparing it with other loop calling methods, showing the comparative ability of our tool to predict loop coordinates with high accuracy.
 The application of persistent homology analysis in chromatin studies is not limited by loop calling procedure: TDA might also be suitable for the identification of **topologically associating domain (TAD) borders** and **higher order structures** with the analysis of the  homologies of different orders. Thus, in our future research in this direction we are devising an **integrative 3D chromatin structure analysis tool**.
 # Data processing pipeline

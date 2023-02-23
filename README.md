@@ -21,7 +21,7 @@ Chromatin displays highly sophisticated levels of structural organization, each 
 
 The existing methods of Hi-C data analysis allow to identify the main chromatin structure components: compartments, chromosomal territories, topologically associating domains, and loops — but these methods either require huge computational resources and manual selection of the calling parameters, or make certain assumptions, limiting the possible search field.
 #### Topological Data Analysis (TDA)
-The challenges of non-universality and **large amounts of input data with stochastic noise** could be tackled by **Topological Data Analysis (TDA)**, the key advantageous of which are the robustness to the noise of the input data, relatively high processivity and intrinsic idea of the analysis of the shape of the data.<br>
+The challenges of non-universality and **large amounts of input data with stochastic noise** could be tackled by **Topological Data Analysis (TDA)**, the key advantages of which are the robustness to the noise of the input data, relatively high processivity and intrinsic idea of the analysis of the shape of the data.<br>
 <p align="center"><img src="images/homologies.png" width="500"></p>
 <p align="center"> <b>Figure 3.</b> Persistent homologies rationale of the finite point cloud in the R2 plane.</p>
 
@@ -51,12 +51,12 @@ The procedure of distance map acquisition may not be limited to Hi-C data only: 
 # Output Data
 * Distance matrix for the given Hi-C matrix;<br>
 <p align="center"><img src="images/distance_matrix_fragment.png" height="400"></p>
-<p align="center"> <b>Figure 4.</b> An illustration of visual contact map patterns preservation: the same fragment from the contact map and distance map displays the key visual patterns of loops at the same positions.</p>
+<p align="center"> <b>Figure 4.</b> An illustration of visual contact map patterns preservation: the same fragment from the <i>Dictyostelium discoideum</i> contact map and distance map displays the key visual patterns of loops at the same positions.</p>
 
 * TSV file with filtered homologies and their features;
 * TSV file with Predicted loop coordinates.<br>
 <p align="center"><img src="images/loop_callers.png" width="400"></p>
-<p align="center"> <b>Figure 5.</b> A fragment of the Hi-C contact map displaying the loop calling results of different tools.</p>
+<p align="center"> <b>Figure 5.</b> A fragment of the <i>Dictyostelium discoideum</i> Hi-C contact map displaying the loop calling results of different tools.</p>
 
 # Dependencies
 * Python >= 3.8

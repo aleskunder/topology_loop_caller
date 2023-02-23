@@ -6,7 +6,6 @@ cooler
 matplotlib~=3.5.2
 chromosight
 seaborn~=0.11.2
-ast
 lightgbm~=3.0.0
 sklearn
 scikit-learn~=1.1.1

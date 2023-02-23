@@ -25,6 +25,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.swp
 MANIFEST
 
 # PyInstaller
@@ -129,5 +130,4 @@ dmypy.json
 .pyre/
 
 # Large data files
-data_new
 NoNAN_DM_new

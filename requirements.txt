@@ -1,5 +1,4 @@
 re
-json
 pandas~=1.1.4
 numpy~=1.23.2
 cooler

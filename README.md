@@ -12,9 +12,12 @@
 # Overview
 #### Chromatin structure and analysis methods
 Chromatin displays highly sophisticated levels of structural organization, each of them affecting key cellular processes.<br>
-| ![Chromatin architecture](images/chromatin.png) |
-|:--:| 
-| **Figure 1.** The organization of eukaryotic chromatin, adapted from Magaña-Acosta and Valadez-Graham, 2020. |<br>
+<p align="center">
+  <img src="images/chromatin.png">
+</p>
+
+**Figure 1.** The organization of eukaryotic chromatin, adapted from Magaña-Acosta and Valadez-Graham, 2020.<br>
+
 **Chromosome conformation capture (3C) techniques** allow us to study the three-dimensional structure as a whole. For instance **Hi-C**, being one of 3C methods, allows the acquisition of a genome-wide contact map.<br>
 ![Hi-C map fragment](images/contact_map.png)<br>
 **Figure 2.** An example of an unbalanced contact frequency heatmap, a fragment of *D. melanogaster* Hi-C matrix.<br>

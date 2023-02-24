@@ -45,3 +45,46 @@ def plot_hic_matrix_fragment(
     if plot_title:
         ax.set_title(plot_title, fontsize=title_fontsize)
     return ax
+
+
+def genomic_dist_interaction_freq_plot(
+    matrix: np.array,
+    # chromsizes, TODO: add only cis contacts
+    ax=None,
+    x_log_scaled: bool = True,
+    y_log_scaled: bool = True,
+    figsize: tuple = (10, 10),
+    color="b",
+    lw: float = 2,
+    plot_title: str = None,
+    title_fontsize: float = 12,
+):
+    """
+    The function visualizes a relation between interaction frequencies and genomic distance (cischrom).
+    :param matrix: numpy 2-D array, normally balanced matrix
+    :param chromsizes: chromsizes in cooler.chromsizes format in n_bins
+    :param x_log_scaled: bool, whether to perform log-normalization of x-axis
+    :param y_log_scaled: bool, whether to perform log-normalization of y-axis
+    :param ax: matplotlib.axes
+    :param figsize: figsize if ax=None
+    :param plot_title: str, plot title text
+    :param title_fontsize: plot title fontsize
+    :returns: ax
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    # Deleting NaN rows in case of balanced matrix
+    ind = np.isnan(matrix).all(axis=1)
+    no_nan_matrix = matrix[~ind][:, ~ind]
+    mean_frequences = [
+        np.mean(no_nan_matrix.diagonal(i)) for i in range(no_nan_matrix.shape[0])
+    ]
+    ax.plot(mean_frequences, color=color, lw=lw)
+    if x_log_scaled:
+        ax.set_xscale("log")
+    if y_log_scaled:
+        ax.set_yscale("log")
+
+    if plot_title:
+        ax.set_title(plot_title, fontsize=title_fontsize)
+    return ax

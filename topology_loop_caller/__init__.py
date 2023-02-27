@@ -5,7 +5,7 @@ __email__ = "alexander.kuznetsov.bioinf@gmail.com"
 __description__ = (
     "Persistent homology - based pipeline of feature generation and loop calling"
 )
-__copyright__ = f"Copyright (c) 2022, {__author__}"
+__copyright__ = f"Copyright (c) 2023, {__author__}"
 __license__ = "MIT license"
 
 __url__ = "https://github.com/aleskunder/topology_loop_caller"

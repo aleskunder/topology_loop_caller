@@ -25,7 +25,7 @@ def load_cooler(
     :returns: 2D NumPy array
     """
     parsed_file_format = parse_format(file_path)
-    if parsed_file_format == ".cool":
+    if parsed_file_format == "cool":
         c = cooler.Cooler(file_path, **kwargs)
         logger.success(f"Loaded given .cool file {file_path.split('/')[-1]}.")
     else:
@@ -48,7 +48,7 @@ def parse_format(file_path: str) -> str:
     :returns: NumPy matrix
     """
     parsed_format = file_path.split(".")[-1]
-    if parsed_format not in [".cool", ".mcool"]:
+    if parsed_format not in ["cool", "mcool"]:
         logger.error(
             f"Check the given file path. .cool or .mcool format is required, {parsed_format} is given"
         )

@@ -67,7 +67,7 @@ def pearson_distance(
     pearson_corr_matrix = np.nan_to_num(pearson_corr_matrix)
     pearson_corr_matrix = 1 - pearson_corr_matrix
     if sqrt:
-        M1_e = np.sqrt(pearson_corr_matrix)
+        pearson_corr_matrix = np.sqrt(pearson_corr_matrix)
     # A step to get surely symmetric matrix:
     pearson_corr_matrix = (pearson_corr_matrix + pearson_corr_matrix.transpose()) / 2
     return pearson_corr_matrix

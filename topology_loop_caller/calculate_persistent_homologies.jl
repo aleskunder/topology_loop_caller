@@ -42,6 +42,10 @@ function parse_commandline()
         help = "Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'."
         arg_type = String
         default = "vr"
+        "--zero-order-homologies-skip"
+        help = "Whether to skip zero order homologies."
+        arg_type = Bool
+        default = true
     end
     return parse_args(s)
 end
@@ -58,11 +62,18 @@ function main()
     maxrad = parsed_args["maxrad"]
     numrad = parsed_args["numrad"]
     model = parsed_args["model"]
+    zero_order_homologies_skip = parsed_args["zero-order-homologies-skip"]
 
     # Creating a folder with results:
     if .!isdir(results_path)
         mkpath(results_path)
         @info "Created path $results_path for results."
+    end
+
+    if zero_order_homologies_skip
+        dimensions_range = 1:maxdim
+    else
+        dimensions_range = 0:maxdim
     end
 
     # Parsing all files inside the folder
@@ -81,7 +92,7 @@ function main()
 
         # Filename / Replica (taken from filename)
         rep = String(match(r"[^\/]+(?=\.[^\/.]*$)", path).match)
-        for d in 1:maxdim
+        for d in dimensions_range
             bar = barcode(C, dim=d)
             dimsize = size(bar)[1]
             #  Dataframe: chr | class | dim | birth | death | lifetime | cycle rep

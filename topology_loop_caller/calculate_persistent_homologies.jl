@@ -6,7 +6,6 @@ using Logging
 using NPZ
 
 
-@info "Finished importing."
 """
     parse_commandline()
 
@@ -29,15 +28,15 @@ function parse_commandline()
         default = 2
         "--minrad"
         help = "Compute homology from time t onward."
-        arg_type = Float
+        arg_type = Float64
         default = -Inf
         "--maxrad"
         help = "Stop computing homology after time t."
-        arg_type = Float
+        arg_type = Float64
         default = Inf
         "--numrad"
         help = "Divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point."
-        arg_type = Float
+        arg_type = Float64
         default = Inf
         "--model"
         help = "Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'."
@@ -46,6 +45,8 @@ function parse_commandline()
     end
     return parse_args(s)
 end
+
+@info "Finished importing."
 
 function main()
     @show parsed_args = parse_commandline()
@@ -61,6 +62,7 @@ function main()
     # Creating a folder with results:
     if .!isdir(results_path)
         mkpath(results_path)
+        @info "Created path $results_path for results."
     end
 
     # Parsing all files inside the folder
@@ -98,14 +100,14 @@ function main()
                 Class=classes, Dim=dims,
                 Birth=births, Death=deaths, Lifetime=lifetimes,
                 Numvert=numvert, Range=range, Vertices=unique_vertices, Unsorted_Vertices=vertices)
-            @infor "tmpdf created for $path and $d"
+            @info "tmpdf created for $path and $d"
             append!(df, tmpdf)
         end
         # Save results to DataFrame
-        @infor "DF for $rep is created."
+        @info "DF for $rep is created."
         savename = "$results_path$rep.csv"
         CSV.write(savename, df)
-        @infor " Saved file: $savename"
+        @info " Saved file: $savename"
     end
 end
 

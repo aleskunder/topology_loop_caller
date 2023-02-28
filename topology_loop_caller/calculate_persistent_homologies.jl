@@ -5,6 +5,9 @@ using Eirene
 using Logging
 using NPZ
 
+function get_file_extention(filename)
+    return filename[findlast(isequal('.'),filename):end]
+end
 
 """
     parse_commandline()
@@ -78,6 +81,9 @@ function main()
 
     # Parsing all files inside the folder
     paths = readdir(matrices_path, join=true)
+    # Filter filenames, find .npy extentions:
+    paths = filter(x->get_file_extention(x)==".npy", paths)
+    @info "Starting to parse the following files: $paths"
     for path in paths
         m = npzread(path)
         @info "NPZ read is done for $path"

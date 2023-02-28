@@ -1,5 +1,6 @@
 import time
 from functools import wraps
+import os
 from loguru import logger
 
 
@@ -20,3 +21,10 @@ def timeit(func):
         return result
 
     return timeit_wrapper
+
+
+def list_full_paths(directory: str) -> list:
+    """
+    Function to list absolute paths of file in the given directory.
+    """
+    return [os.path.join(directory, file) for file in os.listdir(directory)]

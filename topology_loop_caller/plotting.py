@@ -13,6 +13,8 @@ def plot_hic_matrix_fragment(
     interpolation: str = "none",
     plot_title: str = None,
     title_fontsize: float = 12,
+    colorbar: bool = False,
+    **kwargs
 ):
     """
     The function visualizes Hi-C contact map fragment.
@@ -38,12 +40,17 @@ def plot_hic_matrix_fragment(
         matrix_subset = matrix[:, :]
     if log_scaled:
         ax.imshow(
-            np.log(matrix_subset + lop1p_add), cmap=cmap, interpolation=interpolation
+            np.log(matrix_subset + lop1p_add),
+            cmap=cmap,
+            interpolation=interpolation,
+            **kwargs
         )
     else:
-        ax.imshow(matrix_subset, cmap=cmap, interpolation=interpolation)
+        ax.imshow(matrix_subset, cmap=cmap, interpolation=interpolation, **kwargs)
     if plot_title:
         ax.set_title(plot_title, fontsize=title_fontsize)
+    if colorbar:
+        plt.colorbar()
     return ax
 
 
@@ -58,6 +65,7 @@ def genomic_dist_interaction_freq_plot(
     lw: float = 2,
     plot_title: str = None,
     title_fontsize: float = 12,
+    **kwargs
 ):
     """
     The function visualizes a relation between interaction frequencies and genomic distance (cischrom).
@@ -79,7 +87,7 @@ def genomic_dist_interaction_freq_plot(
     mean_frequences = [
         np.mean(no_nan_matrix.diagonal(i)) for i in range(no_nan_matrix.shape[0])
     ]
-    ax.plot(mean_frequences, color=color, lw=lw)
+    ax.plot(mean_frequences, color=color, lw=lw, **kwargs)
     if x_log_scaled:
         ax.set_xscale("log")
     if y_log_scaled:

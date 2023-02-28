@@ -1,6 +1,8 @@
 import numpy as np
+from topology_loop_caller.utils import timeit
 
 
+@timeit
 def negative_log_transformation(
     M: np.array,
     zero_replacement_strategy: str = "martin_fernandez",
@@ -47,6 +49,7 @@ def negative_log_transformation(
     return result
 
 
+@timeit
 def pearson_distance(
     balanced_matrix: np.array,
     sqrt: bool = True,

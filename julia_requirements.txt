@@ -1,0 +1,7 @@
+Distributions
+NPZ
+CSV
+Plots
+DataFrames
+IJulia
+Eirene

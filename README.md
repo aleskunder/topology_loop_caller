@@ -43,6 +43,13 @@ git clone https://github.com/aleskunder/topology_loop_caller.git
 cd topology_loop_caller
 python3 setup.py install
 ```
+* <a href="https://julialang.org/downloads/platform/#linux_and_freebsd">Instructions</a> how to install Julia;
+* <a href="https://www.jousefmurad.com/coding/install-julia-jupyter-notebook/">Instructions</a> how to add Julia to Jupyter Notebooks. Note: after installing all required Julia packages in the Julia interface:
+```
+using Pkg
+Pkg.update()
+Pkg.build("IJulia")
+```
 
 # Input Data
 Hi-C matrices with *.cool* or *.mcool* formats.
@@ -60,9 +67,9 @@ The procedure of distance map acquisition may not be limited to Hi-C data only: 
 
 # Dependencies
 * Python >= 3.8
-* Julia, Eirene library
+* Julia
 
-All required Python packages are listed in the requirements.txt file located in the repository.
+All required Python packages are listed in the requirements.txt file located in the repository. All required Julia packages are listed in the julia_requirements.txt file located in the repository.
 
 # Usage examples
 Jupyter Notebooks with the pipeline example are located in example_notebooks folder.

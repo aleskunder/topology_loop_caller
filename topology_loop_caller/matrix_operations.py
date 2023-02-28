@@ -1,6 +1,7 @@
 import cooler
 from loguru import logger
 import numpy as np
+import os
 from topology_loop_caller.utils import timeit
 from topology_loop_caller.distance_transform import (
     pearson_distance,
@@ -81,17 +82,31 @@ def transform_and_save_matrix(
         "log",
     ], "Wrong distance_function argument: 'pearson' or 'log' are the options"
     not_nan_bin_idx = np.logical_not(np.isnan(balanced_matrix).all(axis=1))
+
+    # Indices saving:
     if save_preserved_idx:
+        # Create (sub)folders, if not exist:
+        if not os.path.exists(preserved_idx_folder):
+            os.makedirs(preserved_idx_folder)
+
         deleted_bins = np.arange(balanced_matrix.shape[0])[
             ~not_nan_bin_idx
         ]  # Indices of deleted bins
+
         saved_bins = np.arange(balanced_matrix.shape[0])[
             not_nan_bin_idx
         ]  # Indices of saved bins
+
         np.save(f"{preserved_idx_folder}{saved_file_prefix}_saved.npy", saved_bins)
         logger.success(f"{saved_file_prefix}_saved.npy is saved")
+
         np.save(f"{preserved_idx_folder}{saved_file_prefix}_deleted.npy", deleted_bins)
         logger.success(f"{saved_file_prefix}_deleted.npy is saved")
+
+    # Create (sub)folders, if not exist:
+    if not os.path.exists(saved_file_base_folder):
+        os.makedirs(saved_file_base_folder)
+
     if distance_function == "pearson":
         np.save(
             f"{saved_file_base_folder}{saved_file_prefix}.npy",

@@ -15,7 +15,7 @@ def load_cooler(
     balance_matrix: bool = True,
     fetch_fragment: str = None,
     **kwargs,
-) -> np.array():
+) -> np.array:
     """
     Function to load Cooler object and return interaction ferquency matrix
     :param file_path: Union[str, Path], a path to a cooler file
@@ -64,15 +64,16 @@ def transform_and_save_matrix(
     preserved_idx_folder: str = "../results/DM_indices/",
     distance_function: str = "pearson",
     **kwargs,
-):
+) -> None:
     """
     Function transforms balanced matrix to a distance matrix by a given method
     and saves .npy and (optionally) indices of preserved bins.
-    :param balanced_matrix: Union[str, Path], a path to a cooler file
-    :param saved_file_prefix: Union[str, Path], a path to a cooler file
-    :param saved_file_path: Union[str, Path], a path to a cooler file
-    :param save_preserved_idx: Union[str, Path], a path to a cooler file
-    :param saved_file_path: Union[str, Path], a path to a cooler file
+    :param balanced_matrix: np.array, an interaction frequency matrix
+    :param saved_file_prefix: str, a prefix of saved files
+    :param saved_file_base_folder: Union[str, Path], a path to a results folder
+    :param save_preserved_idx: bool, whether to preserve indices of no nan bins
+    :param preserved_idx_folder: Union[str, Path], a path to a bins folder
+    :param distance_function: 'pearson' or 'log', a method of contacts - distances transition.
     :returns: none
     """
     assert distance_function in [

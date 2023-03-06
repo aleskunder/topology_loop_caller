@@ -165,10 +165,10 @@ def main() -> None:
     fetch_fragment = args.fetch_fragment
 
     input_file_paths = list_full_paths(input_dir)
-    logger.success((f"{input_file_paths} are parsed.")
+    logger.success(f"{input_file_paths} are parsed.")
     input_file_paths = filter_list_of_paths(input_file_paths, [".cool", ".mcool"])
     if input_file_paths:
-        logger.success((f"{input_file_paths} are kept after filtering.")
+        logger.success(f"{input_file_paths} are kept after filtering.")
     else:
         logger.error("The given folder does not contain .cool or .mcool files.")
     for i, name in enumerate(input_file_paths, 1):

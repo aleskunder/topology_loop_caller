@@ -4,7 +4,6 @@ from typing import Union, List
 import os
 from loguru import logger
 
-
 def timeit(func):
     """
     Decorator to measure the execution time of functions.
@@ -35,4 +34,14 @@ def filter_list_of_paths(paths_list: List[str], selected_extentions = List[str])
     """
     Function to filter file paths by their formats. The passed values are returned.
     """
-    return [x for x in paths_list if any([file.endswith(ext) for ext in selected_extentions])]
+    return [x for x in paths_list if any([x.endswith(ext) for ext in selected_extentions])]
+
+
+def get_current_path() -> str:
+    """
+    Returned a path from which the scripts are executed.
+    """
+    print(os.getcwd())
+    return os.getcwd()
+RESULTS_FOLDER = os.path.join(get_current_path(), 'output')
+

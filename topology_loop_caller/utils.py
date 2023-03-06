@@ -1,5 +1,6 @@
 import time
 from functools import wraps
+from typing import Union, List
 import os
 from loguru import logger
 
@@ -28,3 +29,10 @@ def list_full_paths(directory: str) -> list:
     Function to list absolute paths of file in the given directory.
     """
     return [os.path.join(directory, file) for file in os.listdir(directory)]
+
+
+def filter_list_of_paths(paths_list: List[str], selected_extentions = List[str]) -> Union[list, None]:
+    """
+    Function to filter file paths by their formats. The passed values are returned.
+    """
+    return [x for x in paths_list if any([file.endswith(ext) for ext in selected_extentions])]

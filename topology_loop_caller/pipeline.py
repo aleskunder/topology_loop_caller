@@ -2,8 +2,9 @@ import argparse
 import subprocess
 from topology_loop_caller.utils import RESULTS_FOLDER
 
-def main() -> None:
-    # Define the command-line arguments for all three scripts
+
+def pipeline_arg_parsing():
+    # Define command-line arguments for the pipeline script
     parser = argparse.ArgumentParser(
         description="""
     Command-line tool to execute full pipeline:
@@ -113,11 +114,13 @@ def main() -> None:
         metavar="None/str",
         required=False,
     )
-
-    # Parse the command-line arguments
     args = parser.parse_args()
+    return args
 
-    # Call the first script in Python: loading Cooler files, transforming to distance matrices, saving. 
+
+def run_first_step(args):
+    # Step 1: loading Cooler files, transforming to distance matrices, saving.
+    # Use subprocess.run to call the Python script with its command-line arguments
     subprocess.run(
         [
             "python",
@@ -131,7 +134,10 @@ def main() -> None:
         ]
     )
 
-    # Call the second script in Julia
+
+def run_second_step(args):
+    # Step 2: Run a Julia script
+    # Use subprocess.run to call the Julia script with its command-line arguments
     subprocess.run(
         [
             "julia",
@@ -143,13 +149,14 @@ def main() -> None:
             "--float-arg",
             str(args.float_arg),
         ],
-        stdout=open(args.random_number_file, "w"),
+        stdout=open(args.output_file, "w"),
     )
 
-    # Call the third script in Python
-    subprocess.run(
-        ["python", "step3.py", "--random-number-file", args.random_number_file]
-    )
+
+def main():
+    args = pipeline_arg_parsing()
+    run_first_step(args)
+    run_second_step(args)
 
 
 if __name__ == "__main__":

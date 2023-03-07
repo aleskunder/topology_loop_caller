@@ -20,11 +20,11 @@ function parse_commandline()
         "--matrices-path"
         help = "A path to a folder with distance matrix/matrices (only)"
         arg_type = String
-        default = "../results/NoNAN_DM_new/"
+        default = "../results/distance_matrices/"
         "--results-path"
         help = "A path to a folder where resulting CSV will be saved"
         arg_type = String
-        default = "../results/results_corr/"
+        default = "../results/persistent_homology_results/"
         "--maxdim"
         help = "Compute persistent homology in dimensions 0, ..., k."
         arg_type = Int

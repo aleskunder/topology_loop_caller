@@ -120,7 +120,7 @@ def transform_and_save_matrix(
 
     if distance_function == "pearson":
         np.save(
-            f"{dm_path}{saved_file_prefix}.npy",
+            os.path.join(dm_path, f"{saved_file_prefix}.npy"),
             pearson_distance(balanced_matrix, **kwargs),
         )
     else:

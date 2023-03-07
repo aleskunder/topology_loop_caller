@@ -46,7 +46,6 @@ def get_current_path() -> str:
     """
     Returned a path from which the scripts are executed.
     """
-    print(os.getcwd())
     return os.getcwd()
 
 

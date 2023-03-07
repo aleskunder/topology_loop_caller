@@ -8,8 +8,6 @@ from loguru import logger
 def timeit(func):
     """
     Decorator to measure the execution time of functions.
-    Can be disabled during mixer object initialization with
-    disable_logs=False
     """
 
     @wraps(func)

@@ -1,16 +1,20 @@
 import argparse
 import subprocess
+import os
 from topology_loop_caller.utils import RESULTS_FOLDER
 
 
-def pipeline_arg_parsing():
-    # Define command-line arguments for the pipeline script
+def pipeline_arg_parsing() -> argparse.Namespace:
+    """
+    Step 0: Define command-line arguments for the pipeline script
+    :return: argparse.Namespace object
+    """
     parser = argparse.ArgumentParser(
         description="""
     Command-line tool to execute full pipeline:
     1) load Cooler files & transform them into distance matrices by selected method,
-    3) calculate persistent homologies,
-    4) (TO DO) filter homologies, generate features.
+    2) calculate persistent homologies,
+    3) (TO DO) filter homologies, generate features.
     """
     )
     parser.add_argument(
@@ -114,42 +118,95 @@ def pipeline_arg_parsing():
         metavar="None/str",
         required=False,
     )
-    args = parser.parse_args()
+    parser.add_argument("--maxdim", dest="maxdim",type=int, default=2,
+                        help="Compute persistent homology in dimensions 0, ..., k.")
+    parser.add_argument("--minrad", dest="minrad", type=float, default=-float('inf'),
+                        help="Compute homology from time t onward.")
+    parser.add_argument("--maxrad", dest="maxrad", type=float, default=float('inf'),
+                        help="Stop computing homology after time t.")
+    parser.add_argument("--numrad", dest="numrad", type=float, default=float('inf'),
+                        help="Divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point.")
+    parser.add_argument("--model", dest="model", type=str, default="vr", choices=["pc", "vr", "complex"],
+                        help="Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'.")
+    parser.add_argument("--zero-order-homologies-skip", dest="zero_order_homologies_skip", type=bool, default=True,
+                        help="Whether to skip zero order homologies.")
+    return parser.parse_args()
     return args
 
 
-def run_first_step(args):
-    # Step 1: loading Cooler files, transforming to distance matrices, saving.
-    # Use subprocess.run to call the Python script with its command-line arguments
+def run_first_step(args: argparse.Namespace) -> None:
+    """
+    Step 1: loading Cooler files, transforming to distance matrices, saving.
+    Use subprocess.run to call the Python script with its command-line arguments
+    :param args: argparse.Namespace, the output of parser.parse_args()
+    :return: None
+    """
     subprocess.run(
         [
             "python",
-            "step1.py",
-            "--input-folder",
-            args.input_folder,
-            "--string-arg",
-            args.string_arg,
-            "--float-arg",
-            str(args.float_arg),
+            "matrix_transform.py",
+            "--input-dir",
+            args.input_dir,
+            "--output-dir",
+            args.saved_file_base_folder,
+            "--distance-function",
+            args.distance_function,
+            "--save-preserved-bins",
+            str(args.save_preserved_bins),
+            "--saved-file-prefix",
+            str(args.saved_file_prefix),
+            "--pearson-sqrt",
+            str(args.pearson_sqrt),
+            "--log-zero-replacement-strategy",
+            args.log_zero_replacement_strategy,
+            "--log-base",
+            str(args.log_base),
+            "--mcool-resolution",
+            str(args.mcool_resolution),
+            "--to-balance-matrix",
+            str(args.to_balance_matrix),
+            "--fetch-fragment",
+            str(args.fetch_fragment),
         ]
     )
 
 
-def run_second_step(args):
-    # Step 2: Run a Julia script
-    # Use subprocess.run to call the Julia script with its command-line arguments
+def run_second_step(args: argparse.Namespace) -> None:
+    """
+    Step 2: Run a Julia script with Topological Data Analysis.
+    Use subprocess.run to call the Python script with its command-line arguments
+    :param args: argparse.Namespace, the output of parser.parse_args()
+    :return: None
+    """
+
+    # Define input dir and output dir from basedir:
+    matrices_path = os.path.join(args.saved_file_base_folder, 'distance_matrices')
+    results_path = os.path.join(args.saved_file_base_folder, 'persistent_homology_results')
+
+    # Create the subdirectories if they don't exist
+    os.makedirs(results_path, exist_ok=True)
+
     subprocess.run(
         [
             "julia",
-            "step2.jl",
-            "--input-folder",
-            args.input_folder,
-            "--string-arg",
-            args.string_arg,
-            "--float-arg",
-            str(args.float_arg),
+            "calculate_persistent_homologies.jl",
+            "--matrices-path",
+            matrices_path,
+            "--results-path",
+            results_path,
+            "--maxdim",
+            str(args.maxdim),
+            "--minrad",
+            str(args.minrad),
+            "--maxrad",
+            str(args.maxrad),
+            "--numrad",
+            str(args.numrad),
+            "--model",
+            args.model,
+            "--zero-order-homologies-skip",
+            str(args.zero_order_homologies_skip),
         ],
-        stdout=open(args.output_file, "w"),
     )
 
 

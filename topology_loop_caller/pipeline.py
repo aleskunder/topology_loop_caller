@@ -118,18 +118,49 @@ def pipeline_arg_parsing() -> argparse.Namespace:
         metavar="None/str",
         required=False,
     )
-    parser.add_argument("--maxdim", dest="maxdim",type=int, default=2,
-                        help="Compute persistent homology in dimensions 0, ..., k.")
-    parser.add_argument("--minrad", dest="minrad", type=float, default=-float('inf'),
-                        help="Compute homology from time t onward.")
-    parser.add_argument("--maxrad", dest="maxrad", type=float, default=float('inf'),
-                        help="Stop computing homology after time t.")
-    parser.add_argument("--numrad", dest="numrad", type=float, default=float('inf'),
-                        help="Divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point.")
-    parser.add_argument("--model", dest="model", type=str, default="vr", choices=["pc", "vr", "complex"],
-                        help="Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'.")
-    parser.add_argument("--zero-order-homologies-skip", dest="zero_order_homologies_skip", type=bool, default=True,
-                        help="Whether to skip zero order homologies.")
+    parser.add_argument(
+        "--maxdim",
+        dest="maxdim",
+        type=int,
+        default=2,
+        help="Compute persistent homology in dimensions 0, ..., k.",
+    )
+    parser.add_argument(
+        "--minrad",
+        dest="minrad",
+        type=float,
+        default=-float("inf"),
+        help="Compute homology from time t onward.",
+    )
+    parser.add_argument(
+        "--maxrad",
+        dest="maxrad",
+        type=float,
+        default=float("inf"),
+        help="Stop computing homology after time t.",
+    )
+    parser.add_argument(
+        "--numrad",
+        dest="numrad",
+        type=float,
+        default=float("inf"),
+        help="Divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point.",
+    )
+    parser.add_argument(
+        "--model",
+        dest="model",
+        type=str,
+        default="vr",
+        choices=["pc", "vr", "complex"],
+        help="Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'.",
+    )
+    parser.add_argument(
+        "--zero-order-homologies-skip",
+        dest="zero_order_homologies_skip",
+        type=bool,
+        default=True,
+        help="Whether to skip zero order homologies.",
+    )
     return parser.parse_args()
     return args
 
@@ -180,8 +211,10 @@ def run_second_step(args: argparse.Namespace) -> None:
     """
 
     # Define input dir and output dir from basedir:
-    matrices_path = os.path.join(args.saved_file_base_folder, 'distance_matrices')
-    results_path = os.path.join(args.saved_file_base_folder, 'persistent_homology_results')
+    matrices_path = os.path.join(args.saved_file_base_folder, "distance_matrices")
+    results_path = os.path.join(
+        args.saved_file_base_folder, "persistent_homology_results"
+    )
 
     # Create the subdirectories if they don't exist
     os.makedirs(results_path, exist_ok=True)

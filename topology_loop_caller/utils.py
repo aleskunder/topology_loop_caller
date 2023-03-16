@@ -1,8 +1,9 @@
 import time
 from functools import wraps
-from typing import Union, List
+from typing import Union, List, Dict, Any
 import os
 from loguru import logger
+import argparse
 
 
 def timeit(func):
@@ -45,6 +46,67 @@ def get_current_path() -> str:
     Returned a path from which the scripts are executed.
     """
     return os.getcwd()
+
+
+def get_relative_path(filename: str) -> str:
+    """
+    Get the path relative to this script
+    :param filename: str, a filename of the script
+    :return: str, the path to a script
+    """
+    return os.path.join(os.path.dirname(__file__), filename)
+
+
+def get_args_from_groups(parsed_args, group_nums):
+    """
+    Get a list of command-line arguments from the specified groups in the parsed arguments object
+    :param parsed_args: argparse.Namespace, the parsed arguments object
+    :param group_nums: list of integers, the group numbers to extract arguments from
+    :return: list of str, the command-line arguments
+    """
+    arg_list = []
+    for group_num in group_nums:
+        group = parsed_args._action_groups[group_num]
+        arg_list += [action.dest for action in group._group_actions]
+
+    return arg_list
+
+
+def filter_out_flag_args(args: argparse.Namespace) -> Dict[str, Any]:
+    """
+    Filter argparse.Namespace to remove arguments with only `action_true` and `action_false` actions.
+    :param args: argparse.Namespace
+    :return: Dict[str, Any]
+    """
+    return {k: v for k, v in vars(args).items() if not (isinstance(v, argparse._StoreTrueAction)
+            or isinstance(v, argparse._StoreFalseAction))}
+
+
+def filter_present_flags(args, group_nums):
+    # Get the action flags that are present in the specified groups
+    action_flags = []
+    for group_num in group_nums:
+        for action in args._action_groups[group_num]._group_actions:
+            if isinstance(action, argparse._StoreTrueAction) or isinstance(action, argparse._StoreFalseAction):
+                if getattr(args, action.dest) is True:
+                    action_flags.append(f"--{action.dest}")
+    return action_flags
+
+
+def str_int_float_args(args: dict) -> dict:
+    """
+    Convert integer and float arguments to strings in a dictionary of parsed arguments
+    :param args: dict, the parsed arguments from argparse
+    :return: dict, the parsed arguments with integer and float arguments converted to strings
+    """
+    converted_args = {}
+    for key, value in args.items():
+        if isinstance(value, int) or isinstance(value, float):
+            converted_args[key] = str(value)
+        else:
+            converted_args[key] = value
+    return converted_args
+
 
 
 RESULTS_FOLDER = os.path.join(get_current_path(), "output")

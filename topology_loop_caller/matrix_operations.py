@@ -68,7 +68,7 @@ def transform_and_save_matrix(
     balanced_matrix: np.array,
     saved_file_prefix: str = "output",
     saved_file_base_folder: str = RESULTS_FOLDER,
-    save_preserved_bins: bool = True,
+    no_save_preserved_bins: bool = False,
     distance_function: str = "pearson",
     **kwargs,
 ) -> None:
@@ -89,7 +89,7 @@ def transform_and_save_matrix(
     not_nan_bin_idx = np.logical_not(np.isnan(balanced_matrix).all(axis=1))
 
     # Indices saving:
-    if save_preserved_bins:
+    if not no_save_preserved_bins:
         # Create (sub)folders, if not exist:
         preserved_bins_folder = os.path.join(saved_file_base_folder, "bins_indices")
         os.makedirs(preserved_bins_folder, exist_ok=True)
@@ -168,21 +168,21 @@ def main() -> None:
         required=False,
     )
     parser.add_argument(
-        "--save-preserved-bins",
-        dest="save_preserved_bins",
+        "--no-save-preserved-bins",
+        dest="no_save_preserved_bins",
         type=bool,
         metavar="bool",
         help="Whether to preserve indices of no nan bins. The bin numbers are required for subsequent bins-to-coordinates transformations.",
-        default=True,
+        default=False,
         required=False,
     )
     parser.add_argument(
         "--saved-file-prefix",
         dest="saved_file_prefix",
-        type=Union[str, None],
-        metavar="None/prefix",
-        default=None,
-        help="Prefix of saved files. If None, each input filename if splitted by '_' and the first part is taken.",
+        type=str,
+        metavar="No/prefix",
+        default="No",
+        help="Prefix of saved files. If No, each input filename if splitted by '_' and the first part is taken.",
         required=False,
     )
     parser.add_argument(
@@ -206,9 +206,9 @@ def main() -> None:
     parser.add_argument(
         "--log-base",
         dest="log_base",
-        type=Union[float, int],
+        type=float,
         help="For logarithm distance function: a base of logarithm, default is 10.",
-        default=10,
+        default=10.0,
         metavar="int/float",
         required=False,
     )
@@ -233,14 +233,19 @@ def main() -> None:
     parser.add_argument(
         "--fetch-fragment",
         dest="fetch_fragment",
-        type=Union[None, str],
+        type=str,
         help="if necessary, a fragment (chr/chr fragment) is subsetted for each file.",
-        default=None,
-        metavar="None/str",
+        default="No",
+        metavar="No/str",
         required=False,
     )
 
     args = parser.parse_args()
+
+    # Check if any value is an empty string, and if so, replace it with None
+    for k, v in vars(args).items():
+        if v == "No":
+            setattr(args, k, None)
 
     # Required arguments
     input_dir = args.input_dir
@@ -248,13 +253,13 @@ def main() -> None:
     # Optional arguments
     saved_file_base_folder = args.saved_file_base_folder
     distance_function = args.distance_function
-    save_preserved_bins = args.save_preserved_bins
+    no_save_preserved_bins = args.no_save_preserved_bins if (type(args.no_save_preserved_bins) == bool) else (args.no_save_preserved_bins.lower() == 'true')
     saved_file_prefix = args.saved_file_prefix
     distance_function_kwargs = {
         "pearson": {"sqrt": args.pearson_sqrt},
         "log": {
             "zero_replacement_strategy": args.log_zero_replacement_strategy,
-            "log_base": args.log_base,
+            "log_base": float(args.log_base),
         },
     }
     resolution = args.mcool_resolution
@@ -281,7 +286,7 @@ def main() -> None:
         transform_args = {
             "saved_file_prefix": replica_name,
             "saved_file_base_folder": saved_file_base_folder,
-            "save_preserved_bins": save_preserved_bins,
+            "no_save_preserved_bins": no_save_preserved_bins,
         }
 
         # Determine which distance function to use and set the appropriate arguments

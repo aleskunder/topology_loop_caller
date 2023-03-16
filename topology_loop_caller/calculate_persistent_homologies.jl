@@ -38,7 +38,7 @@ function parse_commandline()
         arg_type = Float64
         default = Inf
         "--numrad"
-        help = "Divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point."
+        help = "Int or Inf, divide the interval from minrad to maxrad into N equally spaced steps, and compute the homology of each step. If the value of numrad is set to Inf, then homology will computed at every time point."
         arg_type = Float64
         default = Inf
         "--model"
@@ -122,7 +122,7 @@ function main()
         end
         # Save results to DataFrame
         @info "DF for $rep is created."
-        savename = "$results_path$rep.csv"
+        savename = joinpath(results_path, "$rep.csv")
         CSV.write(savename, df)
         @info " Saved file: $savename"
     end

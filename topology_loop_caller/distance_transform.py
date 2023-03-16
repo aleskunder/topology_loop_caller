@@ -4,7 +4,7 @@ from topology_loop_caller.utils import timeit
 
 @timeit
 def negative_log_transformation(
-    M: np.array,
+    input_matrix: np.array,
     zero_replacement_strategy: str = "martin_fernandez",
     log_base: float = 10,
 ):
@@ -18,9 +18,9 @@ def negative_log_transformation(
     :returns: np.array with the same shape as M.
     """
     # Replace all NaNs with zeros
-    result = np.nan_to_num(M)
+    result = np.nan_to_num(input_matrix)
     minimal_val = np.unique(result)[1]
-    if zero_replacement_strategy == "half_min":
+    if zero_replacement_strategy == "martin_fernandez":
         # Replace all zeros with the minimal nonzero value * 0.65;
         result = np.where(result == 0.0, minimal_val * 0.65, result)
     elif zero_replacement_strategy == "half_min":

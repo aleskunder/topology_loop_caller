@@ -2,6 +2,7 @@ import cooler
 from loguru import logger
 import numpy as np
 import os
+import glob
 from typing import Union
 import argparse
 from topology_loop_caller.utils import (
@@ -43,6 +44,10 @@ def load_cooler(
         )
     if fetch_fragment:
         result_matrix = c.matrix(balance=balance_matrix).fetch(fetch_fragment)
+        logger.success(
+            f"Fetched the given fragment {fetch_fragment}."
+        )
+
     else:
         result_matrix = c.matrix(balance=balance_matrix)[:, :]
 
@@ -68,7 +73,7 @@ def transform_and_save_matrix(
     balanced_matrix: np.array,
     saved_file_prefix: str = "output",
     saved_file_base_folder: str = RESULTS_FOLDER,
-    no_save_preserved_bins: bool = False,
+    save_preserved_bins: bool = True,
     distance_function: str = "pearson",
     **kwargs,
 ) -> None:
@@ -89,7 +94,7 @@ def transform_and_save_matrix(
     not_nan_bin_idx = np.logical_not(np.isnan(balanced_matrix).all(axis=1))
 
     # Indices saving:
-    if not no_save_preserved_bins:
+    if save_preserved_bins:
         # Create (sub)folders, if not exist:
         preserved_bins_folder = os.path.join(saved_file_base_folder, "bins_indices")
         os.makedirs(preserved_bins_folder, exist_ok=True)
@@ -140,19 +145,22 @@ def main() -> None:
     )
     parser.add_argument(
         "-i",
-        "--input-dir",
-        dest="input_dir",
+        "--input-files",
+        dest="input_files",
         type=str,
-        help="Path to a folder with cooler files.",
+        nargs="+",
+        help="""Required: input files or a regular expression matching multiple input files.
+               Example: -i /path/to/test.cool /path/to/other/test2.cool
+               or: -i ./*.cool""",
         required=True,
-        metavar="<dir>",
+        metavar="<files>",
     )
     parser.add_argument(
         "-o",
         "--output-dir",
         dest="saved_file_base_folder",
         type=str,
-        help="Output folder. If nothing provided output will be written into ./output/",
+        help="Optional: output folder. If nothing provided output will be written into ./output/",
         default=RESULTS_FOLDER,
         required=False,
         metavar="<dir>",
@@ -162,36 +170,33 @@ def main() -> None:
         "--distance-function",
         dest="distance_function",
         type=str,
-        help="Method of contacts - distances transition.",
+        help="Optional: method of contacts-to-distances transition. Default: Pearson",
         default="pearson",
         choices=["pearson", "log"],
         required=False,
     )
     parser.add_argument(
-        "--no-save-preserved-bins",
-        dest="no_save_preserved_bins",
-        type=bool,
-        metavar="bool",
-        help="Whether to preserve indices of no nan bins. The bin numbers are required for subsequent bins-to-coordinates transformations.",
-        default=False,
+        "--do-not-save-preserved-bins",
+        dest="do_not_save_preserved_bins",
+        help="A flag: do not preserve indices of no nan bins, if present. The bin numbers are required for subsequent bins-to-coordinates transformations.",
+        action='store_true',
         required=False,
     )
+
     parser.add_argument(
         "--saved-file-prefix",
         dest="saved_file_prefix",
         type=str,
         metavar="No/prefix",
         default="No",
-        help="Prefix of saved files. If No, each input filename if splitted by '_' and the first part is taken.",
+        help="Optional: a prefix of saved files. If No, each input filename if splitted by '_' and the first part is taken.",
         required=False,
     )
     parser.add_argument(
-        "--pearson-sqrt",
-        dest="pearson_sqrt",
-        type=bool,
-        help="For pearson distance function: whether to take a square root of 1 - corr. matrix.",
-        default=True,
-        metavar="bool",
+        "--no-pearson-sqrt",
+        dest="no_pearson_sqrt",
+        help="For pearson distance function: if not present, a square root of (1 - corr. matrix) is taken.",
+        action='store_true',
         required=False,
     )
     parser.add_argument(
@@ -216,25 +221,23 @@ def main() -> None:
         "--mcool-resolution",
         dest="mcool_resolution",
         type=int,
-        help="A resolution for .mcool files, default is 1000.",
+        help="Optional: a resolution for .mcool files, default is 1000.",
         default=1000,
         metavar="int",
         required=False,
     )
     parser.add_argument(
-        "--to-balance-matrix",
-        dest="to_balance_matrix",
-        type=bool,
-        help="bool, whether to balance the interaction ferquency matrix before distance transformation",
-        metavar="bool",
-        default=True,
+        "--no-balance-matrix",
+        dest="no_balance_matrix",
+        help="A flag: whether to balance the interaction frequency matrix before distance transformation",
+        action='store_true',
         required=False,
     )
     parser.add_argument(
         "--fetch-fragment",
         dest="fetch_fragment",
         type=str,
-        help="if necessary, a fragment (chr/chr fragment) is subsetted for each file.",
+        help="Optional: if necessary, a fragment (chr/chr fragment) is subsetted for each file.",
         default="No",
         metavar="No/str",
         required=False,
@@ -242,30 +245,38 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    logger.info(args)
     # Check if any value is an empty string, and if so, replace it with None
     for k, v in vars(args).items():
         if v == "No":
             setattr(args, k, None)
 
-    # Required arguments
-    input_dir = args.input_dir
+    input_files_str = ' '.join(args.input_files)
+
+    input_files = []
+    for input_file in args.input_files:
+        input_files += glob.glob(input_file)
+
+    if len(input_files) == 0:
+        logger.error("The given files do not exist or are not .cool or .mcool files.")
+        return
 
     # Optional arguments
     saved_file_base_folder = args.saved_file_base_folder
     distance_function = args.distance_function
-    no_save_preserved_bins = args.no_save_preserved_bins if (type(args.no_save_preserved_bins) == bool) else (args.no_save_preserved_bins.lower() == 'true')
+    save_preserved_bins = not args.do_not_save_preserved_bins
     saved_file_prefix = args.saved_file_prefix
     distance_function_kwargs = {
-        "pearson": {"sqrt": args.pearson_sqrt},
+        "pearson": {"sqrt": not args.no_pearson_sqrt},
         "log": {
             "zero_replacement_strategy": args.log_zero_replacement_strategy,
             "log_base": float(args.log_base),
         },
     }
     resolution = args.mcool_resolution
-    to_balance_matrix = args.to_balance_matrix
+    to_balance_matrix = not args.no_balance_matrix
     fetch_fragment = args.fetch_fragment
-    input_file_paths = list_full_paths(input_dir)
+    input_file_paths = list_full_paths(input_files)
     logger.success(f"{input_file_paths} are parsed.")
     input_file_paths = filter_list_of_paths(input_file_paths, [".cool", ".mcool"])
     if input_file_paths:
@@ -279,14 +290,16 @@ def main() -> None:
         # Determine the replica name from the filename
         if not saved_file_prefix:
             replica_name = name.split("/")[-1].split(".")[0].split("_")[0]
-        else:
+        elif len(input_file_paths) > 1:
             replica_name = f"{saved_file_prefix}_{str(i)}"
+        else:
+            replica_name = saved_file_prefix
 
         # Set the arguments for transform_and_save_matrix
         transform_args = {
             "saved_file_prefix": replica_name,
             "saved_file_base_folder": saved_file_base_folder,
-            "no_save_preserved_bins": no_save_preserved_bins,
+            "save_preserved_bins": save_preserved_bins,
         }
 
         # Determine which distance function to use and set the appropriate arguments

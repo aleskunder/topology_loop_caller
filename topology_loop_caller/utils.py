@@ -23,11 +23,17 @@ def timeit(func):
     return timeit_wrapper
 
 
-def list_full_paths(directory: str) -> list:
+def list_full_paths(files: list) -> list:
     """
-    Function to list absolute paths of file in the given directory.
+    Function to list absolute paths of files in the given list.
     """
-    return [os.path.join(directory, file) for file in os.listdir(directory)]
+    result = []
+    for file in files:
+        if os.path.isdir(file):
+            result.extend([os.path.join(file, f) for f in os.listdir(file)])
+        else:
+            result.append(os.path.abspath(file))
+    return result
 
 
 def filter_list_of_paths(
@@ -57,16 +63,16 @@ def get_relative_path(filename: str) -> str:
     return os.path.join(os.path.dirname(__file__), filename)
 
 
-def get_args_from_groups(parsed_args, group_nums):
+def get_args_from_groups(parser, group_nums):
     """
-    Get a list of command-line arguments from the specified groups in the parsed arguments object
-    :param parsed_args: argparse.Namespace, the parsed arguments object
+    Get a list of command-line arguments from the specified groups in the parser object
+    :param parser: argparse.ArgumentParser, the parser object
     :param group_nums: list of integers, the group numbers to extract arguments from
     :return: list of str, the command-line arguments
     """
     arg_list = []
     for group_num in group_nums:
-        group = parsed_args._action_groups[group_num]
+        group = parser._action_groups[group_num]
         arg_list += [action.dest for action in group._group_actions]
 
     return arg_list

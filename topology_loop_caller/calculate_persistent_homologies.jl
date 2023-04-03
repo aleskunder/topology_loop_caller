@@ -17,7 +17,7 @@ function parse_commandline()
     @add_arg_table s begin
         "--input-matrices", "-i"
         help = "A path to a distance matrix/matrices. Example: /path/to/test.npy /path/to/other/test2.npy or: -i ./*.npy"
-        nargs = '*'
+        nargs = '+'
         arg_type = String
         required = true
         "--output-path", "-o"

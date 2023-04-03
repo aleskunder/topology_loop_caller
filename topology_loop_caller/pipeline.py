@@ -8,82 +8,23 @@ from utils import (
     get_relative_path,
     get_args_from_groups,
     filter_out_flag_args,
+    list_full_paths,
+    listdir_nohidden,
     filter_present_flags,
     str_int_float_args,
     RESULTS_FOLDER
 )
 
 
-def run_first_step(parser: argparse.Namespace) -> None:
+def pipeline_arg_parsing() -> argparse.Namespace:
     """
-    Step 1: loading Cooler files, transforming to distance matrices, saving.
-    Use subprocess.run to call the Python script with its command-line arguments
-    :param args: argparse.Namespace, the output of parser.parse_args()
-    :return: None
+    Step 0: Define command-line arguments for the pipeline script
+    :return: argparse.Namespace object
     """
-    # Get the path of the matrix_transform.py file relative to this script
-    matrix_transform_path = get_relative_path("matrix_operations.py")
-    args = parser.parse_args()
-    logger.info(args)
-    # Get the command-line arguments for the subprocess
-    cmd_args_dict = get_args_from_groups(args, [0, 1])
-    cmd_args_dict = filter_out_flag_args(cmd_args_dict)
-    cmd_args_dict = str_int_float_args(cmd_args_dict)
-    cmd_args = [f"--{k}={v}" for k, v in cmd_args_dict.items()]
 
-    # Add action_true and action_false flags, if present
-    flag_args = filter_present_flags(args, [0, 1])
-    subprocess.run(["python", matrix_transform_path, *cmd_args, *flag_args])
-
-
-def run_second_step(parser: argparse.Namespace) -> None:
-    """
-    Step 2: Run a Julia script with Topological Data Analysis.
-    Use subprocess.run to call the Python script with its command-line arguments
-    :param args: argparse.Namespace, the output of parser.parse_args()
-    :return: None
-    """
-    args = parser.parse_args()
-    # Define input dir and output dir from basedir:
-    matrices_path = os.path.join(args.saved_file_base_folder, "distance_matrices")
-    results_path = os.path.join(
-        args.saved_file_base_folder, "persistent_homology_results"
-    )
-
-    # Create the subdirectories if they don't exist
-    os.makedirs(results_path, exist_ok=True)
-
-    # Get the path of the calculate_persistent_homologies.jl file relative to this script
-    calculate_homologies_path = os.path.join(os.path.dirname(__file__), "calculate_persistent_homologies.jl")
-
-    subprocess.run(
-        [
-            "julia",
-            calculate_homologies_path,
-            "--matrices-path",
-            matrices_path,
-            "--results-path",
-            results_path,
-            "--maxdim",
-            str(args.maxdim),
-            "--minrad",
-            str(args.minrad),
-            "--maxrad",
-            str(args.maxrad),
-            "--numrad",
-            str(args.numrad),
-            "--model",
-            args.model,
-            "--zero-order-homologies-skip",
-            str(args.zero_order_homologies_skip).lower(),
-        ],
-    )
-
-
-def main():
     parser = argparse.ArgumentParser(
         description="""
-    Command-line tool to execute full pipeline:\n
+    Command-line tool to execute a full pipeline: \n 
     1) load Cooler files & transform them into distance matrices by selected method,\n
     2) calculate persistent homologies,\n
     3) (TO DO) filter homologies, generate features.
@@ -105,7 +46,7 @@ def main():
     general_group.add_argument(
         "-o",
         "--output-dir",
-        dest="saved_file_base_folder",
+        dest="output_dir",
         type=str,
         help="Optional: output folder. If nothing provided output will be written into ./output/",
         default=RESULTS_FOLDER,
@@ -118,7 +59,7 @@ def main():
         "--distance-function",
         dest="distance_function",
         type=str,
-        help="Optional: method of contacts-to-distances transition. Default: Pearson",
+        help="Optional: method of contacts-to-distances transition. Default: pearson",
         default="pearson",
         choices=["pearson", "log"],
         required=False,
@@ -196,7 +137,14 @@ def main():
         dest="maxdim",
         type=int,
         default=2,
-        help="Compute persistent homology in dimensions 0, ..., k.",
+        help="Compute persistent homology in dimensions mindim, ..., k.",
+    )
+    step2_group.add_argument(
+        "--mindim",
+        dest="mindim",
+        type=int,
+        default=1,
+        help="Compute persistent homology in dimensions j, ..., maxdim.",
     )
     step2_group.add_argument(
         "--minrad",
@@ -227,22 +175,89 @@ def main():
         choices=["pc", "vr", "complex"],
         help="Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'.",
     )
-    step2_group.add_argument(
-        "--calculate-zero-order-homologies",
-        dest="calculate_zero_order_homologies",
-        action='store_true',
-        help="Whether to calculate zero order homologies.",
+    return parser.parse_args()
+
+
+def run_first_step(args: argparse.Namespace) -> None:
+    """
+    Step 1: loading Cooler files, transforming to distance matrices, saving.
+    Use subprocess.run to call the Python script with its command-line arguments
+    :param args: argparse.Namespace, the output of parser.parse_args()
+    :return: None
+    """
+    # Get the path of the calculate_persistent_homologies.jl file relative to this script
+    matrix_transform_path = get_relative_path("matrix_operations.py")
+    flag_arg_names = [
+        "do_not_save_preserved_bins",
+        "no_pearson_sqrt",
+        "no_balance_matrix"
+    ]
+    cmd_arg_names = [
+        "input_files",
+        "output_dir",
+        "distance_function",
+        "saved_file_prefix",
+        "log_zero_replacement_strategy",
+        "log_base",
+        "mcool_resolution",
+        "fetch_fragment"
+    ]
+    args_dict = vars(args)
+    flag_args = [f"--{flag_arg_name.replace('_', '-')}" for flag_arg_name in flag_arg_names if args_dict[flag_arg_name]]
+    cmd_args_dict = str_int_float_args({k:args_dict[k] for k in cmd_arg_names})
+    cmd_args = [f"--{k.replace('_', '-')}={' '.join(v) if type(v) == list else v}" for k, v in cmd_args_dict.items()]
+    subprocess.run(["python", matrix_transform_path, *cmd_args, *flag_args])
+
+
+def run_second_step(args: argparse.Namespace) -> None:
+    """
+    Step 2: Run a Julia script with Topological Data Analysis.
+    Use subprocess.run to call the Python script with its command-line arguments
+    :param args: argparse.Namespace, the output of parser.parse_args()
+    :return: None
+    """
+    # Define input dir and output dir from basedir:
+    matrices_path = os.path.join(args.output_dir, "distance_matrices/")
+    matrices_path = ' '.join(list_full_paths(listdir_nohidden(matrices_path)))
+    results_path = os.path.join(
+        args.output_dir, "persistent_homology_results"
     )
-    logger.info(parser.parse_args())
+
+    # Create the subdirectories if they don't exist
+    os.makedirs(results_path, exist_ok=True)
+
+    # Get the path of the calculate_persistent_homologies.jl file relative to this script
+    calculate_homologies_path = get_relative_path("calculate_persistent_homologies.jl")
+
+    cmd_arg_names = [
+        "maxdim",
+        "mindim",
+        "maxrad",
+        "minrad",
+        "numrad",
+        "model"
+    ]
+    args_dict = vars(args)
+    cmd_args_dict = str_int_float_args({k:args_dict[k] for k in cmd_arg_names})
+    cmd_args = [f"--{k.replace('_', '-')}={v}" for k, v in cmd_args_dict.items()]
+    subprocess.run(["julia", calculate_homologies_path, "--input-matrices",
+            matrices_path,
+            "--output-path",
+            results_path, *cmd_args])
+
+
+def main():
     logger.add("pipeline.log", rotation="10 MB", compression="zip")
+    args = pipeline_arg_parsing()
     logger.info(f"Parsed arguments: {json.dumps(vars(args), indent=4)}",)
     logger.info("Pipeline started")
-    run_first_step(parser)
+    run_first_step(args)
     logger.info("First step completed")
-    run_second_step(parser)
+    run_second_step(args)
     logger.info("Second step completed")
+# Place for step3.py
     logger.success("Pipeline completed")
-    
-  
+
+
 if __name__ == "__main__":
     main()

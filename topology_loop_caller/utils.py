@@ -2,6 +2,7 @@ import time
 from functools import wraps
 from typing import Union, List, Dict, Any
 import os
+import glob
 from loguru import logger
 import argparse
 
@@ -34,6 +35,9 @@ def list_full_paths(files: list) -> list:
         else:
             result.append(os.path.abspath(file))
     return result
+
+def listdir_nohidden(path):
+    return glob.glob(os.path.join(path, '*'))
 
 
 def filter_list_of_paths(

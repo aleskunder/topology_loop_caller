@@ -156,7 +156,7 @@ def main() -> None:
     parser.add_argument(
         "-o",
         "--output-dir",
-        dest="saved_file_base_folder",
+        dest="output_dir",
         type=str,
         help="Optional: output folder. If nothing provided output will be written into ./output/",
         default=RESULTS_FOLDER,
@@ -260,7 +260,7 @@ def main() -> None:
         return
 
     # Optional arguments
-    saved_file_base_folder = args.saved_file_base_folder
+    saved_file_base_folder = args.output_dir
     distance_function = args.distance_function
     save_preserved_bins = not args.do_not_save_preserved_bins
     saved_file_prefix = args.saved_file_prefix

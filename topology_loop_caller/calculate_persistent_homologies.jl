@@ -77,7 +77,7 @@ function main()
     end
     
     # Filter filenames, find .npy extentions:
-    paths = filter(x -> get_file_extention(x) == ".npy", paths)
+    paths = filter(x -> get_file_extention(x) == ".npy", input_matrices)
     @info "Starting to parse the following files: $paths"
     for path in paths
         m = npzread(path)

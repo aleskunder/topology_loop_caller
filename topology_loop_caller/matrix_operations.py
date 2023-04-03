@@ -44,9 +44,7 @@ def load_cooler(
         )
     if fetch_fragment:
         result_matrix = c.matrix(balance=balance_matrix).fetch(fetch_fragment)
-        logger.success(
-            f"Fetched the given fragment {fetch_fragment}."
-        )
+        logger.success(f"Fetched the given fragment {fetch_fragment}.")
 
     else:
         result_matrix = c.matrix(balance=balance_matrix)[:, :]
@@ -179,7 +177,7 @@ def main() -> None:
         "--do-not-save-preserved-bins",
         dest="do_not_save_preserved_bins",
         help="A flag: do not preserve indices of no nan bins, if present. The bin numbers are required for subsequent bins-to-coordinates transformations.",
-        action='store_true',
+        action="store_true",
         required=False,
     )
 
@@ -196,7 +194,7 @@ def main() -> None:
         "--no-pearson-sqrt",
         dest="no_pearson_sqrt",
         help="For pearson distance function: if not present, a square root of (1 - corr. matrix) is taken.",
-        action='store_true',
+        action="store_true",
         required=False,
     )
     parser.add_argument(
@@ -230,7 +228,7 @@ def main() -> None:
         "--no-balance-matrix",
         dest="no_balance_matrix",
         help="A flag: whether to balance the interaction frequency matrix before distance transformation",
-        action='store_true',
+        action="store_true",
         required=False,
     )
     parser.add_argument(
@@ -251,7 +249,7 @@ def main() -> None:
         if v == "No":
             setattr(args, k, None)
 
-    input_files_str = ' '.join(args.input_files)
+    input_files_str = " ".join(args.input_files)
 
     input_files = []
     for input_file in args.input_files:

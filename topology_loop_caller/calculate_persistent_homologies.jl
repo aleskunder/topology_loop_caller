@@ -6,7 +6,7 @@ using Logging
 using NPZ
 
 function get_file_extention(filename)
-    return filename[findlast(isequal('.'),filename):end]
+    return filename[findlast(isequal('.'), filename):end]
 end
 
 """parse_commandline()
@@ -77,7 +77,7 @@ function main()
     end
     
     # Filter filenames, find .npy extentions:
-    paths = filter(x->get_file_extention(x)==".npy", input_matrices)
+    paths = filter(x -> get_file_extention(x) == ".npy", paths)
     @info "Starting to parse the following files: $paths"
     for path in paths
         m = npzread(path)

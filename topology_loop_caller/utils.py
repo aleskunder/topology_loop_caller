@@ -84,8 +84,14 @@ def filter_out_flag_args(args: argparse.Namespace) -> Dict[str, Any]:
     :param args: argparse.Namespace
     :return: Dict[str, Any]
     """
-    return {k: v for k, v in vars(args).items() if not (isinstance(v, argparse._StoreTrueAction)
-            or isinstance(v, argparse._StoreFalseAction))}
+    return {
+        k: v
+        for k, v in vars(args).items()
+        if not (
+            isinstance(v, argparse._StoreTrueAction)
+            or isinstance(v, argparse._StoreFalseAction)
+        )
+    }
 
 
 def filter_present_flags(args, group_nums):
@@ -93,7 +99,9 @@ def filter_present_flags(args, group_nums):
     action_flags = []
     for group_num in group_nums:
         for action in args._action_groups[group_num]._group_actions:
-            if isinstance(action, argparse._StoreTrueAction) or isinstance(action, argparse._StoreFalseAction):
+            if isinstance(action, argparse._StoreTrueAction) or isinstance(
+                action, argparse._StoreFalseAction
+            ):
                 if getattr(args, action.dest) is True:
                     action_flags.append(f"--{action.dest}")
     return action_flags
@@ -112,7 +120,6 @@ def str_int_float_args(args: dict) -> dict:
         else:
             converted_args[key] = value
     return converted_args
-
 
 
 RESULTS_FOLDER = os.path.join(get_current_path(), "output")

@@ -9,26 +9,29 @@ function get_file_extention(filename)
     return filename[findlast(isequal('.'),filename):end]
 end
 
-"""
-    parse_commandline()
-
+"""parse_commandline()
 Parses arguments for CLI Topological Data Analysis step.
 """
 function parse_commandline()
     s = ArgParseSettings()
     @add_arg_table s begin
-        "--matrices-path"
-        help = "A path to a folder with distance matrix/matrices (only)"
+        "--input-matrices", "-i"
+        help = "A path to a distance matrix/matrices. Example: /path/to/test.npy /path/to/other/test2.npy or: -i ./*.npy"
+        nargs = '*'
         arg_type = String
-        default = "../results/distance_matrices/"
-        "--results-path"
-        help = "A path to a folder where resulting CSV will be saved"
+        required = true
+        "--output-path", "-o"
+        help = "A path to a folder where resulting CSVs will be saved"
         arg_type = String
-        default = "../results/persistent_homology_results/"
+        default = "./output/persistent_homology_results/"
         "--maxdim"
-        help = "Compute persistent homology in dimensions 0, ..., k."
+        help = "Compute persistent homology in dimensions mindim, ..., k."
         arg_type = Int
         default = 2
+        "--mindim"
+        help = "Compute persistent homology in dimensions j, ..., maxdim."
+        arg_type = Int
+        default = 1
         "--minrad"
         help = "Compute homology from time t onward."
         arg_type = Float64
@@ -45,10 +48,6 @@ function parse_commandline()
         help = "Used Eirene model, 'pc' (point cloud), 'vr' (vietoris-rips), or 'complex'."
         arg_type = String
         default = "vr"
-        "--zero-order-homologies-skip"
-        help = "Whether to skip zero order homologies."
-        arg_type = Bool
-        default = true
     end
     return parse_args(s)
 end
@@ -57,32 +56,28 @@ end
 
 function main()
     @show parsed_args = parse_commandline()
-
-    matrices_path = parsed_args["matrices-path"]
-    results_path = parsed_args["results-path"]
+    input_matrices = parsed_args["input-matrices"]
+    results_path = parsed_args["output-path"]
     maxdim = parsed_args["maxdim"]
+    mindim = parsed_args["mindim"]
     minrad = parsed_args["minrad"]
     maxrad = parsed_args["maxrad"]
-    numrad = parsed_args["numrad"]
+    if isinf(parsed_args["numrad"])
+        numrad = parsed_args["numrad"]
+    else
+        numrad  = round(Int, parsed_args["numrad"])
+    end
     model = parsed_args["model"]
-    zero_order_homologies_skip = parsed_args["zero-order-homologies-skip"]
+    dimensions_range = mindim:maxdim
 
     # Creating a folder with results:
     if .!isdir(results_path)
         mkpath(results_path)
         @info "Created path $results_path for results."
     end
-
-    if zero_order_homologies_skip
-        dimensions_range = 1:maxdim
-    else
-        dimensions_range = 0:maxdim
-    end
-
-    # Parsing all files inside the folder
-    paths = readdir(matrices_path, join=true)
+    
     # Filter filenames, find .npy extentions:
-    paths = filter(x->get_file_extention(x)==".npy", paths)
+    paths = filter(x->get_file_extention(x)==".npy", input_matrices)
     @info "Starting to parse the following files: $paths"
     for path in paths
         m = npzread(path)

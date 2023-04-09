@@ -218,7 +218,9 @@ def run_second_step(args: argparse.Namespace) -> None:
     """
     # Define input dir and output dir from basedir:
     matrices_path = os.path.join(args.output_dir, "distance_matrices/")
-    matrices_path = ' '.join(list_full_paths(listdir_nohidden(matrices_path)))
+    print(listdir_nohidden(matrices_path))
+    print(list_full_paths((listdir_nohidden(matrices_path))))
+    matrices_paths = list_full_paths(listdir_nohidden(matrices_path))
     results_path = os.path.join(
         args.output_dir, "persistent_homology_results"
     )
@@ -241,7 +243,7 @@ def run_second_step(args: argparse.Namespace) -> None:
     cmd_args_dict = str_int_float_args({k:args_dict[k] for k in cmd_arg_names})
     cmd_args = [f"--{k.replace('_', '-')}={v}" for k, v in cmd_args_dict.items()]
     subprocess.run(["julia", calculate_homologies_path, "--input-matrices",
-            matrices_path,
+            *matrices_paths,
             "--output-path",
             results_path, *cmd_args])
 

@@ -66,6 +66,27 @@ def get_relative_path(filename: str) -> str:
     """
     return os.path.join(os.path.dirname(__file__), filename)
 
+def group_files_by_prefix(file_paths):
+    prefix_to_files = {}
+    for file_path in file_paths:
+        prefix, filename = os.path.splitext(os.path.basename(file_path))
+        prefix_to_files.setdefault(prefix, []).append(file_path)
+    return prefix_to_files
+
+
+def get_new_paths(filepath):
+    # get the original directory and filename
+    orig_dir, orig_file = os.path.split(filepath)
+    
+    # remove the "_postfix.csv" suffix from the original filename
+    filename_base = orig_file[:-len("_postfix.csv")]
+    
+    # create the new paths
+    new_bins_path = os.path.join(orig_dir, "bins_indices", f"{filename_base}_saved.csv")
+    new_dist_path = os.path.join(orig_dir, "distance_matrices", orig_file)
+    
+    return new_bins_path, new_dist_path
+
 
 def get_args_from_groups(parser, group_nums):
     """

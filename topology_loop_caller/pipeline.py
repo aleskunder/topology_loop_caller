@@ -123,6 +123,13 @@ def pipeline_arg_parsing() -> argparse.Namespace:
         required=False,
     )
     step1_group.add_argument(
+        "--include-trans-chrom-contacts",
+        dest="include_trans_chrom_contacts",
+        help="A flag: whether to compute the distance matrix for the whole genome. If not present, distance matrices are saved for all chromosomes separately",
+        action="store_true",
+        required=False,
+    )
+    step1_group.add_argument(
         "--fetch-fragment",
         dest="fetch_fragment",
         type=str,
@@ -190,7 +197,8 @@ def run_first_step(args: argparse.Namespace) -> None:
     flag_arg_names = [
         "do_not_save_preserved_bins",
         "no_pearson_sqrt",
-        "no_balance_matrix"
+        "no_balance_matrix",
+        "include_trans_chrom_contacts"
     ]
     cmd_arg_names = [
         "input_files",

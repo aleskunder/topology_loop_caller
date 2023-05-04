@@ -34,7 +34,7 @@ def negative_log_transformation(
             result,
         )
     # Set all the elements <= 1;
-    result = result / result.max() if result.max() > 1.0 else result
+    result = result / result.max()
     # Log-transformation: all values are set <= 0;
     result = np.log(result) / np.log(log_base)
     # Now all values are set >= 0;
@@ -70,4 +70,5 @@ def pearson_distance(
         pearson_corr_matrix = np.sqrt(pearson_corr_matrix)
     # A step to get surely symmetric matrix:
     pearson_corr_matrix = (pearson_corr_matrix + pearson_corr_matrix.transpose()) / 2
+    pearson_corr_matrix = pearson_corr_matrix / pearson_corr_matrix.max()
     return pearson_corr_matrix

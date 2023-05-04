@@ -39,18 +39,18 @@ def plot_hic_matrix_fragment(
     else:
         matrix_subset = matrix[:, :]
     if log_scaled:
-        ax.imshow(
+        im = ax.imshow(
             np.log(matrix_subset + lop1p_add),
             cmap=cmap,
             interpolation=interpolation,
             **kwargs
         )
     else:
-        ax.imshow(matrix_subset, cmap=cmap, interpolation=interpolation, **kwargs)
+        im = ax.imshow(matrix_subset, cmap=cmap, interpolation=interpolation, **kwargs)
     if plot_title:
         ax.set_title(plot_title, fontsize=title_fontsize)
     if colorbar:
-        plt.colorbar()
+        plt.colorbar(im, ax=ax)
     return ax
 
 

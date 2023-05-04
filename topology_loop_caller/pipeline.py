@@ -218,8 +218,6 @@ def run_second_step(args: argparse.Namespace) -> None:
     """
     # Define input dir and output dir from basedir:
     matrices_path = os.path.join(args.output_dir, "distance_matrices/")
-    print(listdir_nohidden(matrices_path))
-    print(list_full_paths((listdir_nohidden(matrices_path))))
     matrices_paths = list_full_paths(listdir_nohidden(matrices_path))
     results_path = os.path.join(
         args.output_dir, "persistent_homology_results"

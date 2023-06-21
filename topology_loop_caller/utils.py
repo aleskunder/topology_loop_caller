@@ -2,6 +2,7 @@ import time
 from functools import wraps
 from typing import Union, List, Dict, Any
 import os
+import numpy as np
 import glob
 from loguru import logger
 import argparse
@@ -145,6 +146,18 @@ def str_int_float_args(args: dict) -> dict:
         else:
             converted_args[key] = value
     return converted_args
+
+
+def convert_to_python_dict(cooler_info):
+    converted_dict = {}
+    for key, value in cooler_info.items():
+        if isinstance(value, np.generic):
+            converted_dict[key] = np.asscalar(value)
+        elif isinstance(value, dict):
+            converted_dict[key] = convert_to_python_dict(value)
+        else:
+            converted_dict[key] = value
+    return converted_dict
 
 
 RESULTS_FOLDER = os.path.join(get_current_path(), "output")

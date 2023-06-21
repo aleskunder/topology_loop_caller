@@ -4,12 +4,15 @@ import numpy as np
 import pandas as pd
 import os
 import glob
-from typing import Union, Tuple, List, Dict
+import re
+import yaml
+from typing import Union, Tuple, List
 import argparse
 from topology_loop_caller.utils import (
     timeit,
     list_full_paths,
     filter_list_of_paths,
+    convert_to_python_dict,
     RESULTS_FOLDER,
 )
 from topology_loop_caller.distance_transform import (
@@ -24,47 +27,42 @@ def load_cooler(
     resolution: int = 1000,
     balance_matrix: bool = True,
     fetch_fragment: str = None,
-    separate_chromosomes: bool = False,
-
+    cooler_info_folder: str = None,
+    cis_contacts_only: bool = False,
     **kwargs,
-) -> Dict[str, np.ndarray]:
+) -> np.array:
     """
     Function to load Cooler object and return interaction ferquency matrix
     :param file_path: Union[str, Path], a path to a cooler file
     :param resolution: int, a resolution for .mcool files
     :param balance_matrix: bool, whether to balance the interaction ferquency matrix
     :param fetch_fragment: if necessary, a fragment (chr/chr fragment) is subsetted
-    :param separate_chromosomes: bool, whether to process each chromosome separately
-    :returns: dictionary with chronames as keys (if separate_chromosomes, else 'all' key)
-            and 2D NumPy array(s) as values.
+    :returns: 2D NumPy array
     """
     parsed_file_format = parse_format(file_path)
     if parsed_file_format == "cool":
         c = cooler.Cooler(file_path, **kwargs)
-        resolution = c.info['bin-size']
         logger.success(f"Loaded given .cool file {file_path.split('/')[-1]}.")
     else:
         c = cooler.Cooler(f"{file_path}::resolutions/{resolution}", **kwargs)
         logger.success(
             f"Loaded given .mcool file {file_path.split('/')[-1]} with resolution {resolution}."
         )
+    chrom_names = c.chromnames
+    info = c.info
+    matrices = {}
     if fetch_fragment:
         result_matrix = c.matrix(balance=balance_matrix).fetch(fetch_fragment)
+        matrices['fragment'] = result_matrix
         logger.success(f"Fetched the given fragment {fetch_fragment}.")
+    elif cis_contacts_only:
+        for chrom_name in chrom_names:
+            matrices[chrom_name] = c.matrix(balance=balance_matrix).fetch(chrom_name)
     else:
-        if separate_chromosomes:
-            chromosomes = c.chromnames
-            result_matrices = {}
-            for chrom in chromosomes:
-                matrix = c.matrix(balance=balance_matrix).fetch(chrom)
-                result_matrices[chrom] = matrix
-            logger.success(f"Loaded given file {file_path.split('/')[-1]} for each chromosome separately.")
-        else:
-            result_matrix = c.matrix(balance=balance_matrix)[:, :]
-            logger.success(f"Loaded given file {file_path.split('/')[-1]}.")
+        result_matrix = c.matrix(balance=balance_matrix)[:, :]
+        matrices['genome'] = result_matrix
 
-    return result_matrices if separate_chromosomes else {'all': result_matrix}
-
+    return matrices, info
 
 def parse_format(file_path: str) -> str:
     """
@@ -82,7 +80,7 @@ def parse_format(file_path: str) -> str:
 
 @timeit
 def transform_and_save_matrix(
-    balanced_matrix: Dict[str, np.ndarray],
+    input_matrices: tuple,
     saved_file_prefix: str = "output",
     saved_file_base_folder: str = RESULTS_FOLDER,
     save_preserved_bins: bool = True,
@@ -92,8 +90,7 @@ def transform_and_save_matrix(
     """
     Function transforms balanced matrix to a distance matrix by a given method
     and saves .npy and (optionally) indices of preserved bins.
-    :param balanced_matrix: dictionary with chronames as keys (if separate_chromosomes, else 'all' key)
-            and 2D NumPy array(s) as values
+    :param balanced_matrix: np.array, an interaction frequency matrix
     :param saved_file_prefix: str, a prefix of saved files
     :param saved_file_base_folder: Union[str, Path], a path to a results folder
     :param save_preserved_bins: bool, whether to preserve indices of no nan bins. The bin numbers are required for subsequent bins-to-coordinates transformations.
@@ -106,61 +103,86 @@ def transform_and_save_matrix(
     ], "Wrong distance_function argument: 'pearson' or 'log' are the options"
     
 
+    matrices, cooler_info = input_matrices
+
     # Indices saving:
     if save_preserved_bins:
         # Create (sub)folders, if not exist:
-        preserved_bins_folder = os.path.join(saved_file_base_folder, "bins_indices")
+        preserved_bins_folder = os.path.join(saved_file_base_folder, "bins_indices",)
         os.makedirs(preserved_bins_folder, exist_ok=True)
-        if list(balanced_matrix.keys()) == ['all']:
-            all_matrix = balanced_matrix['all']
-            not_nan_bin_idx = np.logical_not(np.isnan(all_matrix).all(axis=1))
-            deleted_bins =  np.arange(all_matrix.shape[0])[~not_nan_bin_idx]  # Indices of deleted bins
+        folders = [
+            name for name in os.listdir(preserved_bins_folder)
+            if os.path.isdir(os.path.join(preserved_bins_folder, name))
+        ]
 
-            saved_bins = np.arange(all_matrix.shape[0])[not_nan_bin_idx]  # Indices of saved bins
-
-            np.save(os.path.join(preserved_bins_folder, f"{saved_file_prefix}_saved.npy"), saved_bins)
-            logger.success(f"{saved_file_prefix}_saved.npy is saved")
-
-            np.save(os.path.join(preserved_bins_folder, f"{saved_file_prefix}_deleted.npy"), deleted_bins)
-            logger.success(f"{saved_file_prefix}_deleted.npy is saved")
+        if len(folders) == 0:
+            next_folder_num = 1
         else:
-            for chrname in balanced_matrix.keys():
-                chr_matrix = balanced_matrix[chrname]
-                not_nan_bin_idx = np.logical_not(np.isnan(chr_matrix).all(axis=1))
-                deleted_bins = np.arange(chr_matrix.shape[0])[~not_nan_bin_idx]  # Indices of deleted bins
+            folder_nums = [int(re.findall(r'\d+', name)[0]) for name in folders]
+            next_folder_num = max(folder_nums) + 1
 
-                saved_bins = np.arange(chr_matrix.shape[0])[not_nan_bin_idx]  # Indices of saved bins
+        chrom_bins_folder = os.path.join(preserved_bins_folder, f"file_{next_folder_num}")
+        os.makedirs(chrom_bins_folder, exist_ok=True)
+        for i, (chrom_name, matrix) in enumerate(matrices.items()):
+            not_nan_bin_idx = np.logical_not(np.isnan(matrix).all(axis=1))
+            deleted_bins = np.arange(matrix.shape[0])[
+                ~not_nan_bin_idx
+            ]  # Indices of deleted bins
 
-                np.save(os.path.join(preserved_bins_folder, f"{saved_file_prefix}_{chrname}_saved.npy"), saved_bins)
+            saved_bins = np.arange(matrix.shape[0])[
+                not_nan_bin_idx
+            ]  # Indices of saved bins
 
-                np.save(os.path.join(preserved_bins_folder, f"{saved_file_prefix}__{chrname}_deleted.npy"), deleted_bins)
-            logger.success("Saved and deleted bins are saved for all chromosomes.")
+            np.save(
+                os.path.join(chrom_bins_folder, f"{saved_file_prefix}_{chrom_name}_saved.npy"),
+                saved_bins,
+            )
+
+            np.save(
+                os.path.join(chrom_bins_folder, f"{saved_file_prefix}_{chrom_name}_deleted.npy"),
+                deleted_bins,
+            )
+
     # Create (sub)folders, if not exist:
     dm_path = os.path.join(saved_file_base_folder, "distance_matrices")
     os.makedirs(dm_path, exist_ok=True)
-    distance_functions = {
-        "pearson": pearson_distance,
-        "log": negative_log_transformation
-    }
+    folders = [
+        name for name in os.listdir(dm_path)
+        if os.path.isdir(os.path.join(dm_path, name))
+    ]
 
-    # Get the distance function based on the given name
-    distance_func = distance_functions[distance_function]
-
-    if list(balanced_matrix.keys()) == ['all']:
-        np.save(
-            os.path.join(dm_path, f"{saved_file_prefix}.npy"),
-            distance_func(balanced_matrix['all'], **kwargs),
-        )
+    if len(folders) == 0:
+        next_folder_num = 1
     else:
-        for chrname in balanced_matrix.keys():
+        folder_nums = [int(re.findall(r'\d+', name)[0]) for name in folders]
+        next_folder_num = max(folder_nums) + 1
+
+    chrom_dm_path = os.path.join(dm_path, f"file_{next_folder_num}")
+    os.makedirs(chrom_dm_path, exist_ok=True)
+
+    for i, (chrom_name, matrix) in enumerate(matrices.items()):
+        if np.all(np.isnan(matrix)):
+            continue
+        if distance_function == "pearson":
             np.save(
-                os.path.join(dm_path, f"{saved_file_prefix}_{chrname}.npy"),
-                distance_func(balanced_matrix[chrname], **kwargs),
-            )   
+                os.path.join(chrom_dm_path, f"{saved_file_prefix}_{chrom_name}.npy"),
+                pearson_distance(matrix, **kwargs),
+            )
+        else:
+            np.save(
+                os.path.join(chrom_dm_path, f"{saved_file_prefix}_{chrom_name}.npy"),
+                negative_log_transformation(matrix, **kwargs),
+            )
+
+    temp_folder = os.path.join(saved_file_base_folder, "temp")
+    os.makedirs(temp_folder, exist_ok=True)
+
+    cooler_info_path = os.path.join(temp_folder, f"{saved_file_prefix}_cooler_info.yaml")
+    with open(cooler_info_path, "w") as file:
+        yaml.dump(convert_to_python_dict(cooler_info), file)
     logger.success(
         f"{saved_file_prefix}.npy is transformed with {distance_function} method and saved."
     )
-
 
 def bin_to_coor(
     bin_num: int, organism_clr: cooler.Cooler, scale_factor: int = 2000
@@ -230,39 +252,6 @@ def coor_to_bin(chr_coor: Tuple, organism_clr: cooler.Cooler, scale_factor: int 
     bin_end = bin_start + bin_num
     
     return int(bin_start - 1 + bin_end - bin_start)
-
-
-def cont_to_dist_bin(saved_indices: np.ndarray, contig_bin_num: int) -> Union[int, str]:
-    """
-    Converts a contiguous bin number to its corresponding index in the saved_indices array.
-    :param saved_indices: numpy array of indices of preserved Hi-C bins
-    :param contig_bin_num: the bin number in the contiguous matrix
-    :return: the corresponding index in saved_indices, or an error message
-    """
-    try:
-        dist_bin_num = int(np.where(saved_indices == contig_bin_num)[0])
-        return dist_bin_num
-    except:
-        return "Invalid bin number or saved indices array."
-
-def dist_to_cont_bin(saved_indices: np.ndarray, bin_num: int) -> Union[int, float]:
-    """
-    Converts the bin number in a filtered matrix to the corresponding bin number in the original matrix.
-    
-    Args:
-    - saved_indices: a numpy array storing the information of preserved Hi-C bins
-    - bin_num: the bin number in the filtered matrix
-    
-    Returns:
-    - the corresponding bin number in the original matrix
-    - np.nan if the bin number is not found in the saved indices
-    
-    """
-    if len(saved_indices) > bin_num:
-        return saved_indices[bin_num]
-    else: 
-        print("Bin number %s is not found in the saved indices." %bin_num)
-        return np.nan 
 
 
 def find_matching_loop_indices(source_df: pd.DataFrame, target_df: pd.DataFrame, 
@@ -424,7 +413,6 @@ def main() -> None:
     saved_file_base_folder = args.output_dir
     distance_function = args.distance_function
     save_preserved_bins = not args.do_not_save_preserved_bins
-    ony_cis_chrom_contacts = not args.include_trans_chrom_contacts
     saved_file_prefix = args.saved_file_prefix
     distance_function_kwargs = {
         "pearson": {"sqrt": not args.no_pearson_sqrt},
@@ -435,6 +423,7 @@ def main() -> None:
     }
     resolution = args.mcool_resolution
     to_balance_matrix = not args.no_balance_matrix
+    cis_chrom_only = not args.include_trans_chrom_contacts
     fetch_fragment = args.fetch_fragment
     input_file_paths = list_full_paths(input_files)
     logger.success(f"{input_file_paths} are parsed.")
@@ -476,18 +465,18 @@ def main() -> None:
     # Use a list comprehension to call transform_and_save_matrix for each file with the appropriate arguments
     for i, name in enumerate(input_file_paths):
         # Load the cooler file
-        bal_dict = load_cooler(
+        bal = load_cooler(
             name,
             resolution=resolution,
             balance_matrix=to_balance_matrix,
+            cis_contacts_only=cis_chrom_only,
             fetch_fragment=fetch_fragment,
-            separate_chromosomes=ony_cis_chrom_contacts
         )
 
         logger.info(
             f"Start transforming and saving with the following arguments: {file_args[i]}"
         )
-        transform_and_save_matrix(bal_dict, **file_args[i])
+        transform_and_save_matrix(bal, **file_args[i])
 
 
 if __name__ == "__main__":

@@ -254,6 +254,41 @@ def run_second_step(args: argparse.Namespace) -> None:
             results_path, *cmd_args])
 
 
+def run_third_step(args: argparse.Namespace) -> None:
+    """
+    Step 1: loading Cooler files, transforming to distance matrices, saving.
+    Use subprocess.run to call the Python script with its command-line arguments
+    :param args: argparse.Namespace, the output of parser.parse_args()
+    :return: None
+    """
+    # Get the path of the calculate_persistent_homologies.jl file relative to this script
+    postprocess_path = get_relative_path("postprocessing.py")
+    homologies_path = os.path.join(args.output_dir, "persistent_homology_results/")
+    homologies_paths = list_full_paths(listdir_nohidden(matrices_path))
+    filtered_homologies_path = os.path.join(
+        args.output_dir, "persistent_homology_postprocessed"
+    )
+
+    # Create the subdirectories if they don't exist
+    os.makedirs(filtered_homologies_path, exist_ok=True)
+    flag_arg_names = [
+        "include_trans_chrom_contacts"
+    ]
+    cmd_arg_names = [
+        "fetch_fragment"
+    ]
+    args_dict = vars(args)
+    flag_args = [f"--{flag_arg_name.replace('_', '-')}" for flag_arg_name in flag_arg_names if args_dict[flag_arg_name]]
+    cmd_args_dict = str_int_float_args({k:args_dict[k] for k in cmd_arg_names})
+    cmd_args = [f"--{k.replace('_', '-')}={' '.join(v) if type(v) == list else v}" for k, v in cmd_args_dict.items()]
+    subprocess.run(["python", postprocess_path,
+                    "--input-homologies", *homologies_paths,
+                    "--output-path", filtered_homologies_path,
+                    *cmd_args,
+                    *flag_args
+                   ])
+
+
 def main():
     logger.add("pipeline.log", rotation="10 MB", compression="zip")
     args = pipeline_arg_parsing()
@@ -263,7 +298,7 @@ def main():
     logger.info("First step completed")
     run_second_step(args)
     logger.info("Second step completed")
-# Place for step3.py
+    run_third_step(args)
     logger.success("Pipeline completed")
 
 
